@@ -10,7 +10,7 @@ buildscript {
     }
 }
 
-version "7.0.3"
+version "7.0.4"
 
 group "com.morpheusdata.grails.plugins"
 
@@ -105,7 +105,7 @@ publishing {
                     licenses {
                         license {
                             name 'The Apache Software License, Version 2.0'
-                            url 'http://www.apache.org/license/LICENSE-2.0.txt'
+                            url 'https://www.apache.org/licenses/LICENSE-2.0.txt'
                             distribution 'repo'
                         }
                     }
@@ -124,7 +124,7 @@ publishing {
     repositories {
         maven {
             if( !isReleaseVersion ) {
-                url = "http://nexus.bertramlabs.com/content/repositories/snapshots"
+                url = "https://nexus.bertramlabs.com/content/repositories/snapshots"
                 if(project.hasProperty('labsNexusUser')) {
                     credentials {
                         username = labsNexusUser
