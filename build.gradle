@@ -65,6 +65,9 @@ dependencies {
     implementation platform("org.apache.grails:grails-bom:$grailsVersion")
     api 'org.apache.httpcomponents:httpcore:4.4.5'
     api 'org.apache.httpcomponents:httpclient:4.5.2'
+    api group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
+    api 'org.elasticsearch.client:elasticsearch-rest-client:7.9.0'
+    api "org.apache.grails:grails-data-hibernate5"
     testImplementation "org.apache.grails:grails-testing-support-datamapping"
     testImplementation "org.mockito:mockito-core"
     testImplementation "org.apache.grails:grails-testing-support-web"
