@@ -23,17 +23,17 @@ apply plugin: 'java-library'
 apply plugin: 'org.apache.grails.gradle.grails-publish'
 apply plugin: 'org.apache.grails.gradle.grails-plugin'
 
+group 'com.morpheusdata'
+
 ext {
   pomDescription = 'Grails ElasticSearch Rest Plugin'
   publishedProjects = [project.name]
 }
 
-group 'com.morpheusdata'
 
-file('../gradle.properties').withInputStream {
-	Properties props = new Properties()
-	props.load(it)
-	project.ext.gradleProperties = props
+configurations {
+    provided
+    doc.extendsFrom(runtime)
 }
 
 sourceSets {
@@ -54,9 +54,22 @@ repositories {
 }
 
 dependencies {
-	implementation platform("org.apache.grails:grails-gradle-bom:${gradleProperties.grailsVersion}")
-	
+    implementation 'org.springframework.boot:spring-boot-starter-logging'
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-autoconfigure"
+    implementation "org.springframework.boot:spring-boot-starter-tomcat"
+    implementation "org.apache.grails:grails-core"
+    implementation "org.apache.grails:grails-web-boot"
+    implementation "org.apache.grails:grails-databinding"
+    implementation "org.apache.grails:grails-services"
+    implementation platform("org.apache.grails:grails-bom:$grailsVersion")
+    api 'org.apache.httpcomponents:httpcore:4.4.5'
+    api 'org.apache.httpcomponents:httpclient:4.5.2'
+    testImplementation "org.apache.grails:grails-testing-support-datamapping"
+    testImplementation "org.mockito:mockito-core"
+    testImplementation "org.apache.grails:grails-testing-support-web"
 }
+
 
 apply {
     from rootProject.layout.projectDirectory.file('gradle/java-config.gradle')
