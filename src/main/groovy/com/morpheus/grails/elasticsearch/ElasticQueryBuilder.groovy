@@ -8,7 +8,7 @@ import groovy.json.JsonOutput
 *
 * @author Brian Wheeler
 */
-class ElasticQueryBuilder {
+public class ElasticQueryBuilder {
 
 	//query calls
 	static rootQuery() {
