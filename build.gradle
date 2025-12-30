@@ -23,7 +23,7 @@ apply plugin: 'java-library'
 apply plugin: 'org.apache.grails.gradle.grails-publish'
 apply plugin: 'org.apache.grails.gradle.grails-plugin'
 
-group 'com.morpheusdata'
+group 'com.morpheusdata.grails.plugins'
 
 ext {
   pomDescription = 'Grails ElasticSearch Rest Plugin'
