@@ -25,7 +25,7 @@ import java.util.regex.Matcher
 * @author Brian Wheeler
 */
 @Slf4j
-class ElasticAdminService {
+public class ElasticAdminService {
 
 	static searchablePropertyName = 'searchable'
 
@@ -114,9 +114,13 @@ class ElasticAdminService {
 		indexMap = [:]
 		for(GrailsClass clazz:grailsApplication.getArtefacts(DomainClassArtefactHandler.TYPE)) {
 			GrailsDomainClass domainClass = (GrailsDomainClass)clazz
-			def mapResults = mapDomainClass(domainClass)
-			if(mapResults)
-				domainList << mapResults
+			try {
+				def mapResults = mapDomainClass(domainClass)
+				if(mapResults)
+					domainList << mapResults
+			} catch(ex) {
+				log.error("error mapping domain class ${domainClass.getName()}: ${ex}", ex)
+			}
 		}
 		//create the templates
 		domainList?.each { DomainMap domainMap ->
