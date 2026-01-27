@@ -1,177 +1,80 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        maven { url = "https://repo.grails.org/grails/restricted" }
-        maven { url = "https://plugins.gradle.org/m2/"}
-    }
-    dependencies {
-        classpath "org.apache.grails:grails-gradle-plugins:$grailsVersion"
-        classpath "io.github.gradle-nexus:publish-plugin:2.0.0"
-    }
-}
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 
-version "7.0.3"
-
-group "com.morpheusdata.grails.plugins"
-
-apply plugin: "eclipse"
-apply plugin: "idea"
+apply plugin: 'java'
+apply plugin: 'groovy'
 apply plugin: 'java-library'
-apply plugin: "org.apache.grails.gradle.grails-plugin"
-apply plugin: 'maven-publish'
-apply plugin: 'signing'
+apply plugin: 'org.apache.grails.gradle.grails-publish'
+apply plugin: 'org.apache.grails.gradle.grails-plugin'
+
+group 'com.morpheusdata.grails.plugins'
 
 ext {
-    isBuildSnapshot = version.endsWith('-SNAPSHOT')
-    isReleaseVersion = !isBuildSnapshot
+  pomDescription = 'Grails ElasticSearch Rest Plugin'
+  publishedProjects = [project.name]
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
-
-repositories {
-    mavenCentral()
-    maven { url "https://repo.grails.org/grails/restricted" }
-}
 
 configurations {
-    developmentOnly
-    runtimeClasspath {
-        extendsFrom developmentOnly
+    provided
+    doc.extendsFrom(runtime)
+}
+
+sourceSets {
+    main {
+        compileClasspath += configurations.provided
+        groovy.srcDirs += ['src/main/java']
+        java.srcDirs = []
     }
+}
+
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven {
+    url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+  }
 }
 
 dependencies {
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
-    implementation "org.springframework.boot:spring-boot-starter-logging"
-    implementation "org.springframework.boot:spring-boot-autoconfigure"
-    implementation "org.apache.grails:grails-core"
+    implementation 'org.springframework.boot:spring-boot-starter-logging'
     implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-autoconfigure"
     implementation "org.springframework.boot:spring-boot-starter-tomcat"
+    implementation "org.apache.grails:grails-core"
     implementation "org.apache.grails:grails-web-boot"
-    implementation "org.apache.grails:grails-logging"
+    implementation "org.apache.grails:grails-databinding"
     implementation "org.apache.grails:grails-services"
-    implementation "org.apache.grails:grails-url-mappings"
-    implementation "org.apache.grails:grails-interceptors"
-    api group: 'commons-beanutils', name: 'commons-beanutils', version: '1.11.0'
+    implementation platform("org.apache.grails:grails-bom:$grailsVersion")
+    api 'org.apache.httpcomponents:httpcore:4.4.5'
+    api 'org.apache.httpcomponents:httpclient:4.5.2'
+    api group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
+    api 'org.elasticsearch.client:elasticsearch-rest-client:7.9.0'
     api "org.apache.grails:grails-data-hibernate5"
-    implementation "org.apache.grails:grails-cache"
-    api 'org.elasticsearch.client:elasticsearch-rest-client:9.0.2'
-    console "org.apache.grails:grails-console"
-    profile "org.apache.grails.profiles:web-plugin"
     testImplementation "org.apache.grails:grails-testing-support-datamapping"
     testImplementation "org.mockito:mockito-core"
     testImplementation "org.apache.grails:grails-testing-support-web"
 }
 
-java {
-    withSourcesJar()
-    withJavadocJar()
+
+apply {
+    from rootProject.layout.projectDirectory.file('gradle/java-config.gradle')
+    from rootProject.layout.projectDirectory.file('gradle/publish-config.gradle')
 }
-
-if (isReleaseVersion) {
-    apply plugin: "io.github.gradle-nexus.publish-plugin"
-    nexusPublishing {
-        repositories {
-            sonatype {
-                nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
-
-                if(project.hasProperty('mavenMorpheusUser')) {
-                    username = mavenMorpheusUser
-                    password = mavenMorpheusPassword
-                }
-            }
-        }
-    }
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            artifactId 'grails-elasticsearch-rest'
-            pom.withXml {
-                asNode().children().last() + {
-                    resolveStrategy = Closure.DELEGATE_FIRST
-                    name 'grails-elasticsearch-rest'
-                    description 'Grails ElasticSearch Low Level Rest Client'
-                    url 'https://github.com/gomorpheus/grails-elasticsearch-rest'
-                    scm {
-                        url 'https://github.com/gomorpheus/grails-elasticsearch-rest'
-                        connection 'scm:https://bertramdev@github.com/gomorpheus/grails-elasticsearch-rest.git'
-                        developerConnection 'scm:git://github.com/gomorpheus/grails-elasticsearch-rest.git'
-                    }
-                    licenses {
-                        license {
-                            name 'The Apache Software License, Version 2.0'
-                            url 'http://www.apache.org/license/LICENSE-2.0.txt'
-                            distribution 'repo'
-                        }
-                    }
-                    developers {
-                        developer {
-                            id 'davydotcom'
-                            name 'David Estes'
-                            email 'davydotcom@gmail.com'
-                        }
-                    }
-                }
-            }
-            from components.java
-        }
-    }
-    repositories {
-        maven {
-            if( !isReleaseVersion ) {
-                url = "http://nexus.bertramlabs.com/content/repositories/snapshots"
-                if(project.hasProperty('labsNexusUser')) {
-                    credentials {
-                        username = labsNexusUser
-                        password = labsNexusPassword
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-
-afterEvaluate {
-    signing {
-        required { isReleaseVersion && gradle.taskGraph.hasTask("publish") }
-        sign publishing.publications.maven
-    }
-}
-
-tasks.withType(Sign) {
-    onlyIf { isReleaseVersion }
-}
-
-//do not generate extra load on Nexus with new staging repository if signing fails
-tasks.withType(io.github.gradlenexus.publishplugin.InitializeNexusStagingRepository).configureEach {
-    shouldRunAfter(tasks.withType(Sign))
-}
-
-
-
-bootRun {
-    ignoreExitValue true
-    jvmArgs(
-        '-Dspring.output.ansi.enabled=always',
-        '-noverify',
-        '-XX:TieredStopAtLevel=1',
-        '-Xmx1024m')
-    sourceResources sourceSets.main
-    String springProfilesActive = 'spring.profiles.active'
-    systemProperty springProfilesActive, System.getProperty(springProfilesActive)
-}
-
-tasks.withType(GroovyCompile) {
-    configure(groovyOptions) {
-        forkOptions.jvmArgs = ['-Xmx1024m']
-    }
-}
-// enable if you wish to package this plugin as a standalone application
-bootJar.enabled = false
