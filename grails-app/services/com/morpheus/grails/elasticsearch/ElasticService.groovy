@@ -35,6 +35,10 @@ import org.apache.http.client.config.*
 import com.morpheus.grails.elasticsearch.ElasticQueryBuilder
 import com.morpheus.grails.elasticsearch.ElasticQueryBuilder.BulkRequest
 import com.morpheus.grails.elasticsearch.ElasticQueryBuilder.MultiSearch
+import com.morpheus.grails.elasticsearch.AwsSigV4HttpRequestInterceptor
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
+import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider
 
 import org.grails.core.artefact.DomainClassArtefactHandler
 import grails.core.GrailsApplication
@@ -85,6 +89,12 @@ class ElasticService {
 			def protocol = grailsApplication.config.getProperty('elasticSearch.protocol',String,'http')
 			def username = grailsApplication.config.getProperty('elasticSearch.user',String,null)
 			def password = grailsApplication.config.getProperty('elasticSearch.password', String,null)
+			
+			// AWS configuration
+			def awsEnabled = grailsApplication.config.getProperty('elasticSearch.aws.enabled', Boolean, false)
+			def awsRegion = grailsApplication.config.getProperty('elasticSearch.aws.region', String, null)
+			def awsServiceName = grailsApplication.config.getProperty('elasticSearch.aws.serviceName', String, 'es')
+			
 			//host
 			if(configHosts == null || (!configHosts instanceof List)) {
 				configHosts = [host:'127.0.0.1', port:9200]
@@ -96,6 +106,22 @@ class ElasticService {
 				clientCredentials.setCredentials(AuthScope.ANY,
 					new UsernamePasswordCredentials(username, password))
 			}
+			
+			// AWS Credentials Provider (for IRSA, EC2 instance profiles, etc.)
+			AwsCredentialsProvider awsCredentialsProvider = null
+			if (awsEnabled && awsRegion) {
+				log.info("AWS authentication enabled for OpenSearch with region: ${awsRegion}, service: ${awsServiceName}")
+				try {
+					// Use DefaultCredentialsProvider which supports IRSA, EC2 instance profiles, 
+					// environment variables, and more
+					awsCredentialsProvider = DefaultCredentialsProvider.create()
+					log.debug("AWS credentials provider initialized successfully")
+				} catch (Exception e) {
+					log.error("Failed to initialize AWS credentials provider: ${e.message}", e)
+					throw new RuntimeException("AWS authentication is enabled but credentials provider failed to initialize", e)
+				}
+			}
+			
 			//ssl
 			SSLContext sslcontext = new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy() {
 				@Override
@@ -157,9 +183,19 @@ class ElasticService {
       ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
 				@Override
 				public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+					// Basic authentication (legacy support)
 					if(clientCredentials) {
 						httpClientBuilder.setDefaultCredentialsProvider( clientCredentials as CredentialsProvider)
 					}
+					
+					// AWS SigV4 authentication (IRSA support)
+					if (awsEnabled && awsCredentialsProvider && awsRegion) {
+						log.debug("Adding AWS SigV4 request interceptor")
+						httpClientBuilder.addInterceptorLast(
+							new AwsSigV4HttpRequestInterceptor(awsCredentialsProvider, awsRegion, awsServiceName)
+						)
+					}
+					
 					httpClientBuilder.setHostnameVerifier(new X509HostnameVerifier() {
 						@Override
 						void verify(String host, SSLSocket ssl) throws IOException {}

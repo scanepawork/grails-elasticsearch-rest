@@ -35,3 +35,4 @@ if (Environment.isDevelopmentMode() && targetDir != null) {
     logger("StackTrace", ERROR, ['FULL_STACKTRACE'], false)
 }
 root(ERROR, ['STDOUT'])
+logger('com.morpheus.grails.elasticsearch', DEBUG, ['STDOUT'], false)

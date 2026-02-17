@@ -68,6 +68,11 @@ dependencies {
     api group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
     api 'org.elasticsearch.client:elasticsearch-rest-client:7.9.0'
     api "org.apache.grails:grails-data-hibernate5"
+
+    // AWS SDK dependencies for IRSA support
+    api platform('software.amazon.awssdk:bom:2.20.0')
+    api 'software.amazon.awssdk:auth'
+    api 'software.amazon.awssdk:sts'
     testImplementation "org.apache.grails:grails-testing-support-datamapping"
     testImplementation "org.mockito:mockito-core"
     testImplementation "org.apache.grails:grails-testing-support-web"

@@ -15,6 +15,7 @@ Add The `grails-elasticsearch-client` to your `build.gradle`.
 
 Configuration options can be specified in your `application.yml`
 
+### Basic Configuration (HTTP/HTTPS with Basic Auth)
 
 ```yml
 elasticSearch:
@@ -29,6 +30,74 @@ elasticSearch:
             - {host: 127.0.0.1, port: 9200}
     index:
         numberOfReplicas: 1
+```
+
+### AWS OpenSearch Configuration with IRSA (IAM Roles for Service Accounts)
+
+For AWS OpenSearch clusters using IAM authentication, configure the plugin to use AWS SigV4 request signing:
+
+```yml
+elasticSearch:
+    bulkIndexOnStartup: false
+    protocol: https
+    client:
+        hosts:
+            - {host: my-opensearch-cluster.us-east-1.es.amazonaws.com, port: 443}
+    aws:
+        enabled: true
+        region: us-east-1
+        serviceName: es  # 'es' for OpenSearch/Elasticsearch
+    index:
+        numberOfReplicas: 1
+```
+
+**Key Points for AWS Authentication:**
+
+* **`aws.enabled`** - Set to `true` to enable AWS SigV4 request signing
+* **`aws.region`** - AWS region where your OpenSearch cluster is located (e.g., `us-east-1`)
+* **`aws.serviceName`** - AWS service name, defaults to `es` for OpenSearch/Elasticsearch
+* **`protocol`** - Must be `https` for AWS OpenSearch
+* **`port`** - Typically `443` for AWS OpenSearch
+* **Authentication Methods Supported:**
+  * **IRSA (IAM Roles for Service Accounts)** - Automatic for Kubernetes pods with proper service account annotations
+  * **EC2 Instance Profiles** - Automatic for EC2 instances with attached IAM roles
+  * **Environment Variables** - AWS credentials from `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+  * **AWS Credentials File** - Standard AWS credentials file at `~/.aws/credentials`
+
+**Do not specify `user` and `password` when using AWS authentication** - IAM credentials are retrieved automatically.
+
+### Kubernetes IRSA Setup
+
+To use IRSA in Kubernetes, ensure your pod's service account is properly annotated:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-app-service-account
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/my-opensearch-access-role
+```
+
+The IAM role should have permissions to access your OpenSearch cluster:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "es:ESHttpGet",
+        "es:ESHttpPut",
+        "es:ESHttpPost",
+        "es:ESHttpDelete",
+        "es:ESHttpHead"
+      ],
+      "Resource": "arn:aws:es:us-east-1:123456789012:domain/my-domain/*"
+    }
+  ]
+}
 ```
 
 
