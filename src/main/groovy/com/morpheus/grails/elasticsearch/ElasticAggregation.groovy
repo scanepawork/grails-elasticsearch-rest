@@ -3,7 +3,7 @@ package com.morpheus.grails.elasticsearch
 import ElasticQueryBuilder.*
 import groovy.json.JsonOutput
 
-class ElasticAggregation {
+public class ElasticAggregation {
 
 	static rootAggregation() {
 		return new RootAggregation()
