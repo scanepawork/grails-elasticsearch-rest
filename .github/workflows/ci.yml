@@ -2,18 +2,24 @@ name: "CI"
 on:
   push:
     branches:
+      - master
       - '[4-9]+.[0-9]+.x'
-      - 'master'
   pull_request:
+    branches:
+      - master
+      - '[4-9]+.[0-9]+.x'
+
+permissions:
+  contents: read
+
 jobs:
   build:
-    name: 'Build'
+    name: 'Build (Java ${{ matrix.java }})'
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        java: [ 17 ]
-        os: [ ubuntu-latest ]
-    runs-on: ubuntu-24.04
+        java: [ 17, 21 ]
     steps:
       - name: "📥 Checkout repository"
         uses: actions/checkout@v4
@@ -25,13 +31,16 @@ jobs:
       - name: "🐘 Setup Gradle"
         uses: gradle/actions/setup-gradle@v4
       - name: "🔨 Build project"
-        run: >
-          ./gradlew build
-          --continue --stacktrace
-  publish:
+        run: ./gradlew build --continue --stacktrace
+
+  publish-snapshot:
+    name: 'Publish Snapshot'
     needs: [ build ]
-    if: github.repository_owner == 'HewlettPackard' && github.event_name == 'push'
+    if: github.event_name == 'push'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: "📥 Checkout repository"
         uses: actions/checkout@v4
@@ -42,11 +51,10 @@ jobs:
           java-version: 17
       - name: "🐘 Setup Gradle"
         uses: gradle/actions/setup-gradle@v4
-      - name: "📤 Publish Snapshot"
-        run: >          
-          ./gradlew publish
+      - name: "📤 Publish Snapshot to GitHub Packages"
+        run: ./gradlew publish
         env:
           GRAILS_PUBLISH_RELEASE: 'false'
-          MAVEN_PUBLISH_URL: 'https://central.sonatype.com/repository/maven-snapshots/'
-          MAVEN_PUBLISH_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-          MAVEN_PUBLISH_PASSWORD: ${{ secrets.MAVEN_PASSWORD  }}
+          MAVEN_PUBLISH_URL: 'https://maven.pkg.github.com/${{ github.repository }}'
+          MAVEN_PUBLISH_USERNAME: ${{ github.actor }}
+          MAVEN_PUBLISH_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
